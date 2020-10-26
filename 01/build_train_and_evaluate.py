@@ -7,7 +7,6 @@ and evaluate the accuracy of the model.
 """
 
 import tensorflow as tf
-import numpy as np
 
 # Load and prepare the MNIST dataset. 
 # Convert the samples from integers to floating-point numbers
@@ -16,11 +15,6 @@ mnist = tf.keras.datasets.mnist
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
-x_train_flipped = np.flip(x_train, axis=1)
-x_train_transpose_flipped = np.flip(x_train.swapaxes(1,2), axis=1)
-train_x = np.vstack([x_train, x_train_flipped, x_train_transpose_flipped])
-train_y = np.hstack([y_train, y_train, y_train])
-
 # Build the tf.keras.Sequential model by stacking layers. 
 # Choose an optimizer and loss function for training
 
@@ -28,13 +22,18 @@ model = tf.keras.models.Sequential([
   tf.keras.layers.Flatten(input_shape=(28, 28)),
   tf.keras.layers.Dense(128, activation='relu'),
   tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(64, activation='relu'),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(32, activation='relu'),
+  tf.keras.layers.Dropout(0.2),  
   tf.keras.layers.Dense(10)
 ])
 
+model.summary()
 # For each example the model returns a vector of "logits" 
 # or "log-odds" scores, one for each class.
 
-predictions = model(train_x[:1]).numpy()
+predictions = model(x_train[:1]).numpy()
 predictions
 
 # The tf.nn.softmax function converts these logits
@@ -53,7 +52,7 @@ loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 # This untrained model gives probabilities close to random (1/10 for each class), 
 # so the initial loss should be close to -tf.log(1/10) ~= 2.3.
 
-loss_fn(train_y[:1], predictions).numpy()
+loss_fn(y_train[:1], predictions).numpy()
 
 model.compile(optimizer='adam',
               loss=loss_fn,
@@ -61,7 +60,7 @@ model.compile(optimizer='adam',
 
 # The Model.fit method adjusts the model parameters to minimize the loss:
 
-model.fit(train_x, train_y, epochs=50)
+model.fit(x_train, y_train, epochs=5)
 
 test_loss, test_acc = model.evaluate(x_test, y_test, verbose=2)
 
